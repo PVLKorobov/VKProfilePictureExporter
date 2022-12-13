@@ -18,8 +18,8 @@ if __name__ == "__main__":
     userData = configparser.ConfigParser()
     userData.read("user_data.ini")
     main_log = logger("main")
-    main_log.info(["Инициальзован обьект класса logger"],
-                   "Инициализирован обьект класса ConfigParser")  # logged
+    main_log.info(["Инициальзован обьект класса logger",
+                   "Инициализирован обьект класса ConfigParser"])  # logged
 
     main_log.reset_log()
 

@@ -34,7 +34,7 @@ class VkAPI:
 
         self._raiseForStatus(response.json())
 
-        self.userData["VK"]["userId"] = response.json()["response"][0]["id"]  # Здесь userId присваивается числовое id пользователя.
+        self.userData["VK"]["userId"] = str(response.json()["response"][0]["id"])  # Здесь userId присваивается числовое id пользователя.
         self.VK_log.info(["Получено userId из ScreenName"])  # logged
 
     # проверка кода ответа
@@ -48,7 +48,7 @@ class VkAPI:
     def _getUnifiedData(self):
         requestUrl = "https://api.vk.com/method/photos.get"
         headers = {
-        "owner_id" : self.userData["VK"]["userId"],
+        "owner_id" : int(self.userData["VK"]["userId"]),
         "album_id" : "profile",
         "extended" : 1,
         "access_token" : self.userData["VK"]["token"],
