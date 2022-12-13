@@ -18,11 +18,12 @@ class logger:
         return now.strftime("%H:%M:%S")
 
 # Логирование состояния программы
-    def info(self,message_input):
-        entry = self.blank_entry
-        current_time = self._get_current_time()
-        with open(self.log_filename, "a", encoding="utf-8") as log_file:
-            log_file.write(entry.format(time=current_time, type="INFO", message=message_input, prefix=self.prefix))
+    def info(self,messages_array):
+        for message in messages_array:
+            entry = self.blank_entry
+            current_time = self._get_current_time()
+            with open(self.log_filename, "a", encoding="utf-8") as log_file:
+                log_file.write(entry.format(time=current_time, type="INFO", message=message, prefix=self.prefix))
 
 # Логирование предупреждения
     def warning(self, message_input):
