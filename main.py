@@ -3,33 +3,29 @@ from API.VkAPI import VkAPI
 from API.YanDiskAPI import YandexAPI
 
 import json
+import configparser
 
 def getUserData():
-    userId = input("Введите id пользователя ВКонтакте: ")
-    YDToken = input("Введите токен с Полигона Яндекс.Диска: ")
-    VKToken = ""
-    with open("vk_token.txt") as tokenFile:
-        VKToken = tokenFile.readline()
-    main_log.info([f"Получено id пользователя {userId}", 
-                    "Получен токен доступа ВКотнакте", 
+    userData["VK"]["userId"] = input("Введите id пользователя ВКонтакте: ")
+    userData["YD"]["token"] = input("Введите токен с Полигона Яндекс.Диска: ")
+    main_log.info([f"Получен id пользователя", 
                     "Получен токен доступа Яндекс.Диска"])  # logged
-
-    return [YDToken, VKToken, userId]
 
     
 if __name__ == "__main__":
 
 
+    userData = configparser.ConfigParser()
+    userData.read("user_data.ini")
     main_log = logger("main")
-    main_log.info(["Инициальзован обьект класса logger"])  # logged
+    main_log.info(["Инициальзован обьект класса logger"],
+                   "Инициализирован обьект класса ConfigParser")  # logged
 
     main_log.reset_log()
-    userData = getUserData()
-    # 0 - YDToken; 1 - VKToken; 2 - userId
 
 
-    YD_API = YandexAPI(userData[0])
-    VK_API = VkAPI(userData[2], userData[1])
+    YD_API = YandexAPI(userData["YD"]["token"])
+    VK_API = VkAPI(userData["VK"]["userId"], userData["VK"]["token"])
     main_log.info([f"Инициальзован обьект класса YandexAPI", 
                    f"Инициализован обьект класса VkAPI"])  # logged
 
