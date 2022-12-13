@@ -1,4 +1,5 @@
 from logger import logger
+
 import requests
 
 
@@ -8,9 +9,9 @@ class YandexAPI:
         self.path_name = "Exported Profile Pictures"
         self.base_headers = {"Content-Type": "application/json", 
                             "Authorization": f"OAuth {self.token}"}
-                            # Стандартный набор аргументов запроса
-        self.base_url = "https://cloud-api.yandex.net/v1/disk/" # Часть url, единая для всех запросов
-        self.YD_log = logger("YD - ")
+                            # стандартный набор аргументов запроса
+        self.base_url = "https://cloud-api.yandex.net/v1/disk/" # часть url, единая для всех запросов
+        self.YD_log = logger("YD")
         self.YD_error_codes = {400:"Некорректные данные.",
                             401:"Не авторизован.",
                             403:"API недоступно. Ваши файлы занимают больше места, чем у вас есть.",
@@ -22,18 +23,18 @@ class YandexAPI:
                             503:"Сервис временно недоступен.",
                             507:"Недостаточно свободного места."}
     
-# Проверка кода ответа
+# проверка кода ответа
     def _raiseForStatus(self, responseCode):
         if responseCode in self.YD_error_codes:
             error_msg = self.YD_error_codes[responseCode]
-            self.YD_log.error(f"{error_msg} error_code:{responseCode}") #logged
+            self.YD_log.error(f"{error_msg} error_code:{responseCode}")  # logged
 
-# Поиск на Я.Диске дубликатов экспортируемого файла
-    def _check_for_duplicate(self, filename):
+# поиск на Я.Диске дубликатов экспортируемого файла
+    def _checkForDuplicate(self, filename):
         request_url = self.base_url + "resources"
         headers = self.base_headers
         params = {"path" : self.path_name, "fields" : "items"}
-        self.YD_log.info(f"Отправка запроса get по {request_url}") #logged
+        self.YD_log.info([f"Отправка запроса get по {request_url}"])  # logged
         response = requests.get(request_url, headers=headers, params=params)
 
         self._raiseForStatus(response.status_code)
@@ -41,41 +42,67 @@ class YandexAPI:
         embedded_items = response.json()["_embedded"]["items"]
         for item in embedded_items:
             if item["name"] == filename:
-                self.YD_log.warning(f"Файл '{filename}' уже существует на Диске") #logged
+                self.YD_log.warning(f"Файл '{filename}' уже существует на Диске")  # logged
                 return False
-        self.YD_log.info(f"Файл '{filename}' не существует на Диске") #logged
+        self.YD_log.info([f"Файл '{filename}' не существует на Диске"])  # logged
         return True
 
-# Загрузка файла на Я.диск по URL ресурса
-    def upload_by_url(self, file_url, filename):
-        self._create_folder()
-        if self._check_for_duplicate(filename):
-            request_url = self.base_url + "resources/upload"
-            headers = self.base_headers
-            params = {"path" : f"{self.path_name}/" + filename, "url" : file_url}
-            self.YD_log.info(f"Отправка запроса post по {request_url}") #logged
-            response = requests.post(request_url, headers=headers, params=params)
+# загрузка файла на Я.диск по URL ресурса
+    def uploadByURL(self, file_url, filename, savedCount):
+        self._createFolder()
+        if savedCount > 1:
+            self.YD_log.info([f"Сохранение {savedCount} файлов на Диск"])  # logged
+            filename += "({index}).jpg"
+            if self._checkForDuplicate(filename.format(index=1)):
+                for i in range(1, savedCount + 1):
+                        request_url = self.base_url + "resources/upload"
+                        headers = self.base_headers
+                        params = {"path" : f"{self.path_name}/" + filename.format(index=i), "url" : file_url}
+                        self.YD_log.info([f"Отправка запроса post по {request_url}"])  # logged
+                        response = requests.post(request_url, headers=headers, params=params)
 
-            self._raiseForStatus(response.status_code)
+                        self._raiseForStatus(response.status_code)
 
-            if response.status_code == 202:
-                self.YD_log.info(f"Файл '{filename}' загружен на Диск") #logged
+                        if response.status_code == 202:
+                            self.YD_log.info([f"Файл '{filename.format(index=i)}' загружен на Диск"])  # logged
+                self.YD_log.info([f"{savedCount} файлов сохранено на Диск"])  # logged
                 return True
+            else:
+                self.YD_log.info([f"Файл '{filename}' не был загружен на Диск, так как уже существует"])  # logged
+                return False
+            
         else:
-            self.YD_log.info(f"Файл '{filename}' не был загружен на Диск, так как уже существует") #logged
-            return False
+            filename += ".jpg"
+            if self._checkForDuplicate(filename):
+                request_url = self.base_url + "resources/upload"
+                headers = self.base_headers
+                params = {"path" : f"{self.path_name}/" + filename, "url" : file_url}
+                self.YD_log.info([f"Отправка запроса post по {request_url}"])  # logged
+                response = requests.post(request_url, headers=headers, params=params)
 
-# Создание папки для файлов на Я.Диске
-    def _create_folder(self):
+                self._raiseForStatus(response.status_code)
+
+                if response.status_code == 202:
+                    self.YD_log.info([f"Файл '{filename}' загружен на Диск"])  # logged
+                    return True
+            else:
+                self.YD_log.info([f"Файл '{filename}' не был загружен на Диск, так как уже существует"])  # logged
+                return False
+# Не придумал как вынести код в другую функцию, чтобы избежать повторения.
+# Потому здесь два схожих блока кода.
+
+
+# создание папки для файлов на Я.Диске
+    def _createFolder(self):
         request_url = self.base_url + "resources"
         headers = self.base_headers
         params = {"path" : self.path_name}
-        self.YD_log.info(f"Отправка запроса put по {request_url}") #logged
+        self.YD_log.info([f"Отправка запроса put по {request_url}"])  # logged
         response = requests.put(request_url, headers=headers, params=params)
 
         self._raiseForStatus(response.status_code)
 
         if response.status_code == 201:
-            self.YD_log.info(f"Создана директория {self.path_name}") #logged
+            self.YD_log.info([f"Создана директория {self.path_name}"])  # logged
         elif response.status_code == 409:
-            self.YD_log.warning(f"Директория {self.path_name} уже существует") #logged
+            self.YD_log.warning(f"Директория {self.path_name} уже существует")  # logged
