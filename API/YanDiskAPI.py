@@ -1,16 +1,16 @@
 from logger import logger
 
 import requests
+import configparser
 
 
 class YandexAPI:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self):
         self.path_name = "Exported Profile Pictures"
-        self.base_headers = {"Content-Type": "application/json", 
-                            "Authorization": f"OAuth {self.token}"}
-                            # стандартный набор аргументов запроса
-        self.base_url = "https://cloud-api.yandex.net/v1/disk/" # часть url, единая для всех запросов
+        self.base_url = "https://cloud-api.yandex.net/v1/disk/"  # часть url, единая для всех запросов
+
+        self.userData = configparser.ConfigParser()
+        self.userData.read("user_data.ini")
         self.YD_log = logger("YD")
         self.YD_error_codes = {400:"Некорректные данные.",
                             401:"Не авторизован.",
@@ -32,7 +32,8 @@ class YandexAPI:
 # поиск на Я.Диске дубликатов экспортируемого файла
     def _checkForDuplicate(self, filename):
         request_url = self.base_url + "resources"
-        headers = self.base_headers
+        headers = {"Content-Type": "application/json", 
+                   "Authorization": "OAuth {token}".format(token=self.userData["YD"]["token"])}
         params = {"path" : self.path_name, "fields" : "items"}
         self.YD_log.info([f"Отправка запроса get по {request_url}"])  # logged
         response = requests.get(request_url, headers=headers, params=params)
@@ -56,7 +57,8 @@ class YandexAPI:
             if self._checkForDuplicate(filename.format(index=1)):
                 for i in range(1, savedCount + 1):
                         request_url = self.base_url + "resources/upload"
-                        headers = self.base_headers
+                        headers = {"Content-Type": "application/json", 
+                                   "Authorization": "OAuth {token}".format(token=self.userData["YD"]["token"])}
                         params = {"path" : f"{self.path_name}/" + filename.format(index=i), "url" : file_url}
                         self.YD_log.info([f"Отправка запроса post по {request_url}"])  # logged
                         response = requests.post(request_url, headers=headers, params=params)
@@ -75,7 +77,8 @@ class YandexAPI:
             filename += ".jpg"
             if self._checkForDuplicate(filename):
                 request_url = self.base_url + "resources/upload"
-                headers = self.base_headers
+                headers = {"Content-Type": "application/json", 
+                           "Authorization": "OAuth {token}".format(token=self.userData["YD"]["token"])}
                 params = {"path" : f"{self.path_name}/" + filename, "url" : file_url}
                 self.YD_log.info([f"Отправка запроса post по {request_url}"])  # logged
                 response = requests.post(request_url, headers=headers, params=params)
@@ -95,7 +98,8 @@ class YandexAPI:
 # создание папки для файлов на Я.Диске
     def _createFolder(self):
         request_url = self.base_url + "resources"
-        headers = self.base_headers
+        headers = {"Content-Type": "application/json", 
+                   "Authorization": "OAuth {token}".format(token=self.userData["YD"]["token"])}
         params = {"path" : self.path_name}
         self.YD_log.info([f"Отправка запроса put по {request_url}"])  # logged
         response = requests.put(request_url, headers=headers, params=params)

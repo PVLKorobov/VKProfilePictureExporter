@@ -24,8 +24,8 @@ if __name__ == "__main__":
     main_log.reset_log()
 
 
-    YD_API = YandexAPI(userData["YD"]["token"])
-    VK_API = VkAPI(userData["VK"]["userId"], userData["VK"]["token"])
+    YD_API = YandexAPI()
+    VK_API = VkAPI()
     main_log.info([f"Инициальзован обьект класса YandexAPI", 
                    f"Инициализован обьект класса VkAPI"])  # logged
 
