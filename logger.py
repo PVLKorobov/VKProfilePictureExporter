@@ -5,7 +5,7 @@ class logger:
     def __init__(self, prefix = ""):
         self.prefix = prefix
         self.log_filename = "activity_log.log"
-        self.blank_entry = "[{time}][{prefix}{type}]{message}\n"
+        self.blank_entry = "[{time}][{prefix}/{type}]{message}\n"
 
 # Очистка файла
     def reset_log(self):
